@@ -1,0 +1,25 @@
+#######################################
+# Syntax Coloring Map for AFMotor
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+Blinker	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+Start	KEYWORD2
+Stop	KEYWORD2
+OneShot	KEYWORD2
+On	KEYWORD2
+Off	KEYWORD2
+Toggle	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+NORMAL_MODE	LITERAL1
+ONE_SHOT_MODE	LITERAL1
+
