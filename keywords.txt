@@ -6,6 +6,7 @@
 # Datatypes (KEYWORD1)
 #######################################
 Blinker	KEYWORD1
+RTL_Blinker	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
