@@ -12,7 +12,7 @@
 #include <IPollable.h>
 
 
-class Blinker : IPollable
+class Blinker : public IPollable
 {
     public: static const uint8_t REPEAT_MODE   = 0;
     public: static const uint8_t ONE_SHOT_MODE = 1;
@@ -31,15 +31,14 @@ class Blinker : IPollable
     public: void Start(uint16_t period, bool oneShot);
     public: void Stop();
     public: void OneShot(uint16_t period=0);
+    public: inline void On();
+    public: inline void Off();
+    public: inline void Toggle();
 
+    //**************************************************************************
+    // IPollable interface
+    //**************************************************************************
     public: void Poll();
-
-    //**************************************************************************
-    // Internal implementation
-    //**************************************************************************
-    private: inline void On();
-    private: inline void Off();
-    private: inline void Toggle();
 
     //**************************************************************************
     // Internal state

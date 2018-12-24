@@ -68,6 +68,7 @@ void Blinker::Start(uint16_t period)
     On();   // Aways start with LED on
 
     if (period > 0) _period = period;
+    
     Debug.Log(this) << __func__ << F(": LED=") << _state.led << endl;
 }
 
