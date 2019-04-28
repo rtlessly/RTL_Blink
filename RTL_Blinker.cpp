@@ -3,55 +3,30 @@
  *
  * created 09 Jul 2016
  * by R. Terry Lessly
- *
  *******************************************************************************/
 #define DEBUG 0
  
 #include <Arduino.h>
-#include <Debug.h>
 #include <Streaming.h>
+#include <RTL_Stdlib.h>
 #include "RTL_Blinker.h"
 
 
-static DebugHelper Debug("Blinker");
-
-
-static char* BlinkerID = "Blinker";
+DEFINE_CLASSNAME(Blinker);
 
 
 //******************************************************************************
 // Constructor
 //******************************************************************************
-Blinker::Blinker(uint8_t ledPin, uint16_t period, bool oneShot)
+Blinker::Blinker(uint8_t ledPin, uint16_t period, uint16_t dutyCycle)
 {
-    _id = BlinkerID;
     _state.pin = ledPin;
-    _state.mode = oneShot ? ONE_SHOT_MODE : REPEAT_MODE;
-    _state.running = false;
-    _state.led = 0;
-    _period = period;
-}
-
-
-Blinker::Blinker(uint16_t period)
-{
-    _id = BlinkerID;
-    _state.pin = LED_BUILTIN;
     _state.mode = REPEAT_MODE;
     _state.running = false;
     _state.led = 0;
-    _period = period;
-}
-
-
-Blinker::Blinker(uint16_t period, bool oneShot)
-{
-    _id = BlinkerID;
-    _state.pin = LED_BUILTIN;
-    _state.mode = oneShot ? ONE_SHOT_MODE : REPEAT_MODE;
-    _state.running = false;
-    _state.led = 0;
-    _period = period;
+    
+    pinMode(_state.pin, OUTPUT);
+    SetBlinkRate(period, dutyCycle);
 }
 
 
@@ -59,7 +34,15 @@ Blinker::Blinker(uint16_t period, bool oneShot)
 // Public interface
 //******************************************************************************
 
-void Blinker::Start(uint16_t period)
+void Blinker::SetBlinkRate(uint16_t period, uint16_t dutyCycle)
+{
+    dutyCycle = constrain(dutyCycle, 0, 100);
+    _onTime = period * dutyCycle / 100;
+    _offTime = period - _onTime;
+}
+
+
+void Blinker::Start()
 {
     if (_state.running) return; // Ignore if already running
 
@@ -67,75 +50,44 @@ void Blinker::Start(uint16_t period)
     _startTime = millis();
     On();   // Aways start with LED on
 
-    if (period > 0) _period = period;
-    
-    Debug.Log(this) << __func__ << F(": LED=") << _state.led << endl;
+    TRACE(Logger(_classname_, F("Start")) << F(": LED=") << _state.led << F(": Mode=") << _state.mode << endl);
 }
 
 
-void Blinker::Start(uint16_t period, bool oneShot)
+void Blinker::Start(uint16_t period, uint16_t dutyCycle)
 {
-    if (_state.running) return; // Ignore if already running
-
-    _state.mode = oneShot ? ONE_SHOT_MODE : REPEAT_MODE;
-    Start(period);
-}
-
-
-void Blinker::Stop()
-{
-    _state.running = false;
-    Off();  // Ensure the LED off
+    _state.running = false;      // Turn off first to allow restarting in new mode
+    _state.mode = REPEAT_MODE;
+    SetBlinkRate(period, dutyCycle);
+    Start();
 }
 
 
 void Blinker::OneShot(uint16_t period)
 {
-    Start(period, true);
+    if (period > 0) _onTime = period;
+
+    _state.running = false;      // Turn off first to allow restarting in new mode
+    _state.mode = ONE_SHOT_MODE;
+    Start();
 }
 
 
 void Blinker::Poll()
 {
-    Debug.Log(this) << __func__; 
+    TRACE(Logger(_classname_, F("Poll")) << endl);
 
-    if (!_state.running || _period == 0) return;
+    if (!_state.running) return;
 
-    uint32_t now = millis();
+    auto toggleTime = _state.led ? _onTime : _offTime;
+    auto now = millis();
 
-    if ((now - _startTime) >= _period)
+    if ((now - _startTime) >= toggleTime)
     {
         Toggle();
-        Debug << " LED=" << _state.led;
+        _startTime = now
+        TRACE(Logger(_classname_, F("Poll")) << F(": LED=") << _state.led << endl);
 
-        if (_state.mode == REPEAT_MODE) _startTime = now; else Stop();
+        if (_state.mode == ONE_SHOT_MODE) Stop();
     }
-
-    Debug << endl;
-}
-
-
-//******************************************************************************
-// Internal methods
-//******************************************************************************
-
-inline void Blinker::On()
-{
-    _state.led = HIGH;
-    pinMode(_state.pin, OUTPUT);
-    digitalWrite(_state.pin, HIGH);
-}
-
-
-inline void Blinker::Off()
-{
-    _state.led = LOW;
-    pinMode(_state.pin, OUTPUT);
-    digitalWrite(_state.pin, _state.led);
-}
-
-
-inline void Blinker::Toggle()
-{
-    if (_state.led) Off(); else On();
 }
